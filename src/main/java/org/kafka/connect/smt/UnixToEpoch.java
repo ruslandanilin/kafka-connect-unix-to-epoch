@@ -33,6 +33,7 @@ import org.apache.kafka.connect.transforms.util.SchemaUtil;
 import org.apache.kafka.connect.transforms.util.SimpleConfig;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.UUID;
 
@@ -96,8 +97,14 @@ public abstract class UnixToEpoch<R extends ConnectRecord<R>> implements Transfo
             return newRecord(record, null, null);
         }
         Object unix_ts = value.get(fieldName);
-        final Map<String, Object> updatedValue = new HashMap<>(value);
-        updatedValue.put(fieldName, convertUnixToEpoch(unix_ts));
+        final Map<String, Object> updatedValue = new LinkedHashMap<>();
+        for (Map.Entry<String, Object> entry : value.entrySet()) {
+            if (entry.getKey().equals(fieldName)) {
+                updatedValue.put(entry.getKey(), convertUnixToEpoch(unix_ts));
+            } else {
+                updatedValue.put(entry.getKey(), entry.getValue());
+            }
+        }
         return newRecord(record, null, updatedValue);
     }
 
@@ -109,7 +116,7 @@ public abstract class UnixToEpoch<R extends ConnectRecord<R>> implements Transfo
         if (updatedSchema == null) {
             SchemaBuilder builder = SchemaUtil.copySchemaBasics(schema, SchemaBuilder.struct());
             for (Field field : schema.fields()) {
-                    builder.field(field.name(), field.schema());
+                builder.field(field.name(), field.schema());
             }
             if (schema.isOptional())
                 builder.optional();
