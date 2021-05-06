@@ -36,7 +36,7 @@ public class UnixToEpochTest {
   }
 
   @Test
-  public void schemalessInsertUuidField() {
+  public void schemalessTestConversion() {
     final Map<String, Object> props = new HashMap<>();
 
     props.put("ts.field.name", "ts");
@@ -48,5 +48,20 @@ public class UnixToEpochTest {
 
     final SourceRecord transformedRecord = xform.apply(record);
     assertEquals(1620177595, ((Map) transformedRecord.value()).get("ts"));
+  }
+
+  @Test
+  public void schemalessTestNullConversion() {
+    final Map<String, Object> props = new HashMap<>();
+
+    props.put("ts.field.name", "ts");
+
+    xform.configure(props);
+
+    final SourceRecord record = new SourceRecord(null, null, "test", 0,
+            null, null);
+
+    final SourceRecord transformedRecord = xform.apply(record);
+    assertEquals(null, transformedRecord.value());
   }
 }

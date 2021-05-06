@@ -51,7 +51,7 @@ public abstract class UnixToEpoch<R extends ConnectRecord<R>> implements Transfo
             .define(ConfigName.TS_FIELD_NAME, ConfigDef.Type.STRING, "ts", ConfigDef.Importance.HIGH,
                     "Field name of original unix timestamp.");
 
-    private static final String PURPOSE = "Converting Unix timestamp  to epoch.";
+    private static final String PURPOSE = "Converting Unix timestamp to epoch.";
 
     private String fieldName;
 
@@ -91,7 +91,10 @@ public abstract class UnixToEpoch<R extends ConnectRecord<R>> implements Transfo
     }
 
     private R applySchemaless(R record) {
-        final Map<String, Object> value = requireMap(operatingValue(record), PURPOSE);
+        final Map<String, Object> value = requireMapOrNull(operatingValue(record), PURPOSE);
+        if (value == null) {
+            return newRecord(record, null, null);
+        }
         Object unix_ts = value.get(fieldName);
         final Map<String, Object> updatedValue = new HashMap<>(value);
         updatedValue.put(fieldName, convertUnixToEpoch(unix_ts));
