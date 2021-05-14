@@ -17,6 +17,8 @@
 
 package org.kafka.connect.smt;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.common.cache.Cache;
 import org.apache.kafka.common.cache.LRUCache;
 import org.apache.kafka.common.cache.SynchronizedCache;
@@ -41,6 +43,7 @@ import static org.apache.kafka.connect.transforms.util.Requirements.*;
 
 public abstract class UnixToEpoch<R extends ConnectRecord<R>> implements Transformation<R> {
 
+    private static final String line_sep = System.lineSeparator();
     public static final String OVERVIEW_DOC =
             "Divide Unix timestamp (Java Long) by 1000 to get Epoch, unix time in seconds (Java Integer).";
 
@@ -57,6 +60,8 @@ public abstract class UnixToEpoch<R extends ConnectRecord<R>> implements Transfo
     private String fieldName;
 
     private Cache<Schema, Schema> schemaUpdateCache;
+
+    private ObjectMapper om = new ObjectMapper();
 
     @Override
     public void configure(Map<String, ?> props) {
@@ -105,7 +110,14 @@ public abstract class UnixToEpoch<R extends ConnectRecord<R>> implements Transfo
                 updatedValue.put(entry.getKey(), entry.getValue());
             }
         }
-        return newRecord(record, null, updatedValue);
+        String jsonString = null;
+        try {
+            jsonString = om.writeValueAsString(updatedValue) + line_sep;
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+            throw new DataException("Can not convert object to JSON string.");
+        }
+        return newRecord(record, null, jsonString);
     }
 
     private R applyWithSchema(R record) {
